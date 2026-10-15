@@ -1,4 +1,4 @@
-/* 让子弹射 · 自播页 autoplay.js —— 构建于 2026-10-15T20:37:49.038Z；源：web版/autoplay-main.js + autoplay/loop/inject-combined.js（34018 字节）*/
+/* 让子弹射 · 自播页 autoplay.js —— 构建于 2026-10-15T22:04:39.095Z；源：web版/autoplay-main.js + autoplay/loop/inject-combined.js（34018 字节）*/
 // autoplay-main.js —— 「让子弹射」自播页主逻辑（构建模板；build-autoplay.js 把闭环源码塞进 INJECT_SRC）
 // 页内一体化流程：等界面 → 点「让子弹射」→ 点「开始」→ ★等新局"真正就绪"即刻 种预热车道+注入闭环
 //   → 等结算 → 点「重新挑战」（Cocos 原生面板，只点 activeInHierarchy 的那颗）→ 无限连播。
@@ -102,9 +102,23 @@
     return false;
   }
 
-  // ---- 进新局后的动作：种预热车道（已知真值 536，免 31s 巡场赌命）+ 注入闭环
+  // 车道要按「场地相对位置」算，不能写绝对值（2026-10-16 线上实测教训）：
+  //   游戏按窗口比例重排场地——杯子可移动范围 Game11._cup._xRange 跟着窗口变：
+  //     本机校准窗口 492x804（设计分辨率 816x1334）→ 场地 [157.7, 775.4]，黄金车道实测 536（＝场地宽度的 61.24%）
+  //     手机竖屏 414x896（设计分辨率 750x1623）→ 场地 [116.9, 676.9]，同一根 536 落在场地右侧：整局 t104 就死、kill455
+  //   把车道改按 61.24% 换算 → 手机场地得 460：实测同样打法 t142 还活着、kill797（没换策略，只挪了车道）
+  var LANE_RATIO = 0.6124;    // (536-157.7)/(775.4-157.7)，校准几何里实测出来的最优位置
+  function laneFromField() {
+    try {
+      var r = window.Game11 && window.Game11._cup && window.Game11._cup._xRange;
+      if (r && isFinite(r.x) && isFinite(r.y) && r.y > r.x) return Math.round(r.x + LANE_RATIO * (r.y - r.x));
+    } catch (e) {}
+    return 536;               // 读不到场地 → 退回校准几何的绝对值
+  }
+
+  // ---- 进新局后的动作：种预热车道（按场地换算，免 31s 巡场赌命）+ 注入闭环
   function seedAndInject(why) {
-    try { window.__autoCal = { bestX: 536, bestCps: 20.56, at: Date.now() }; } catch (e) {}
+    try { window.__autoCal = { bestX: laneFromField(), bestCps: 20.56, at: Date.now() }; } catch (e) {}
     try {
       // eslint-disable-next-line no-eval
       eval(INJECT_SRC);

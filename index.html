@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>僵尸亮了 · 让子弹射 · 自动玩</title>
+  <meta name="viewport"
+        content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1,minimal-ui=true"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="renderer" content="webkit"/>
+  <meta name="force-rendering" content="webkit"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="full-screen" content="yes"/>
+  <meta name="x5-fullscreen" content="true"/>
+  <meta name="360-fullscreen" content="true"/>
+  <meta name="x5-page-mode" content="app">
+
+  <!-- 官方资源全部从游戏自己的 CDN 现拉（settings.json 里 assets.server 本就写死这个地址）
+       —— 本仓库只放我们自己的代码；游戏脚本一个字节不改（实测无域名锁/反调试，见交付说明） -->
+  <base href="https://file.gugudang.com/res/down/public/p_kapibala/web-mobile/jiangshiliangle/">
+
+  <link rel="stylesheet" type="text/css" href="style.f76d1.css"/>
+
+  <style>
+    /* 自播页：让画布满屏、居中，去掉页外滚动 */
+    html, body { margin: 0; padding: 0; background: #000; height: 100%; overflow: hidden; }
+    #GameDiv { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="GameDiv" cc_exact_fit_screen="true">
+    <div id="Cocos3dGameContainer">
+      <canvas id="GameCanvas" oncontextmenu="event.preventDefault()" tabindex="99"></canvas>
+    </div>
+  </div>
+
+  <!-- 官方启动链（相对路径 → 经 <base> 指到官方 CDN） -->
+  <script src="src/polyfills.bundle.5adbf.js" charset="utf-8"></script>
+  <script src="src/system.bundle.543e6.js" charset="utf-8"></script>
+  <script src="src/import-map.7e54d.json" type="systemjs-importmap" charset="utf-8"></script>
+
+  <script>
+    System.import('./index.2dd22.js').catch(function (err) { console.error(err); });
+  </script>
+
+  <!-- 官方 index.html 尾部的入口脚本（原样复刻；少这三行，游戏会把访问当"真新手"丢进主玩法教学局）：
+       ① 没 t 参数就补一个（官方自己的防缓存约定）
+       ② __GM = 1 —— 官方正式版自己就是这个标记（实测：没有它 = 进主玩法第 1 关；有它 = 直达主界面）
+       ③ __VERSION = 渠道标记
+       未复刻：console-ban.min.js（官方页有"开 DevTools 跳 /404"的反调试，对自动玩无意义，故不抄，交付说明里讲明） -->
+  <script>
+    function getQueryString(name) {
+      var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+      if (!window.location || !window.location.search) return null;
+      var r = window.location.search.substr(1).match(reg);
+      if (r != null) return decodeURIComponent(r[2]);
+      return null;
+    }
+    if (!getQueryString("t")) {
+      window.location.href += ("?t=" + Date.now());
+    }
+    window["__GM"] = 1;
+    window["__VERSION"] = "jiangshiliangle";
+  </script>
+
+  <!-- 自动玩：页内一体化（进关→注入→连播）。构建：node build-autoplay.js
+       ⚠ 必须用【绝对 URL】动态加载：页面顶部有 <base> 指官方 CDN，任何相对路径的 src
+       都会被解析到 CDN 上（autoplay.js 是我们的文件，不在 CDN，会 404）。 -->
+  <script>
+    (function () {
+      var dir = location.href.replace(/[?#].*$/, '').replace(/\/[^\/]+$/, '/');
+      var s = document.createElement('script');
+      s.src = dir + 'autoplay.js';
+      s.charset = 'utf-8';
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

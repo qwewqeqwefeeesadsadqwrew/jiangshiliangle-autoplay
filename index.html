@@ -49,6 +49,9 @@
        ① 没 t 参数就补一个（官方自己的防缓存约定）
        ② __GM = 1 —— 官方正式版自己就是这个标记（实测：没有它 = 进主玩法第 1 关；有它 = 直达主界面）
        ③ __VERSION = 渠道标记
+       ⚠ ①做过一处加固（黛西 2026-10-16）：官方的写法是 location.href += "?t=" + ...，
+       若网址上已经带了别的查询参数（例如分享时加的 ?v=…），t 永远读不到 → 页面无限自我刷新。
+       这里改成"已经有查询串就用 & 接"，行为与官方一致、但不会打转。
        未复刻：console-ban.min.js（官方页有"开 DevTools 跳 /404"的反调试，对自动玩无意义，故不抄，交付说明里讲明） -->
   <script>
     function getQueryString(name) {
@@ -59,7 +62,7 @@
       return null;
     }
     if (!getQueryString("t")) {
-      window.location.href += ("?t=" + Date.now());
+      window.location.href += (window.location.search ? "&" : "?") + "t=" + Date.now();
     }
     window["__GM"] = 1;
     window["__VERSION"] = "jiangshiliangle";
